@@ -10,7 +10,9 @@ import com.box.l10n.mojito.smartling.request.StringData;
 import com.box.l10n.mojito.smartling.response.SourceStringsResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,6 +22,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Service to manage matching between mojito text units and third party text units
  **/
+@Component
 public class ThirdPartyTextUnitMatchingService {
     /**
      * logger
@@ -35,7 +38,7 @@ public class ThirdPartyTextUnitMatchingService {
     @Autowired
     TMTextUnitRepository tmTextUnitRepository;
 
-    void getThirdPartyTextUnits(String projectId, String file, Asset asset) throws SmartlingClientException {
+    void getThirdPartyTextUnits(String projectId, String file, Long assetId) throws SmartlingClientException {
         logger.debug("Checking for third party text units in file {} of project {}", file, projectId);
         Integer offset = 0;
         List<StringData> stringDataToCheck = new ArrayList<>();
@@ -55,7 +58,7 @@ public class ThirdPartyTextUnitMatchingService {
             throw e;
         }
 
-        matchThirdPartyTextUnits(stringDataToCheck, asset);
+        matchThirdPartyTextUnits(stringDataToCheck, assetId);
     }
 
     SourceStringsResponse getSourceStrings(String projectId, String file, Integer offset) throws SmartlingClientException {
@@ -66,7 +69,8 @@ public class ThirdPartyTextUnitMatchingService {
         }
     }
 
-    void matchThirdPartyTextUnits(List<StringData> stringDataList, Asset asset) {
+    void matchThirdPartyTextUnits(List<StringData> stringDataList, Long assetId) {
+        Instant start = Instant.now();
         AtomicInteger fullMatch = new AtomicInteger(0);
         AtomicInteger partialMatch = new AtomicInteger(0);
         AtomicInteger newThirdPartyTextUnit = new AtomicInteger(0);
@@ -76,6 +80,8 @@ public class ThirdPartyTextUnitMatchingService {
                                 stringInfo -> {
                                     String hashcode = stringInfo.getHashcode();
                                     String mappingKey = stringInfo.getParsedStringText();
+                                    logger.info("hashcode: {}", hashcode);
+                                    logger.info("mapping key: {}", mappingKey);
                                     ThirdPartyTextUnit thirdPartyTextUnit = new ThirdPartyTextUnit();
                                     thirdPartyTextUnit.setThirdPartyTextUnitId(hashcode);
                                     thirdPartyTextUnit.setMappingKey(mappingKey);
@@ -96,15 +102,19 @@ public class ThirdPartyTextUnitMatchingService {
                                         } else {
                                             newThirdPartyTextUnit.getAndIncrement();
                                         }
-                                        TMTextUnit matchingMojitoTextUnit = tmTextUnitRepository.findFirstByAssetAndMd5(asset, mappingKey);
+                                        TMTextUnit matchingMojitoTextUnit = tmTextUnitRepository.findFirstByContentAndAssetId(mappingKey, assetId);
+                                        logger.info("matching mojito text unit: {}", matchingMojitoTextUnit.getContent());
                                         thirdPartyTextUnit.setTmTextUnit(matchingMojitoTextUnit);
                                         thirdPartyTextUnitRepository.save(thirdPartyTextUnit);
                                     }
                                 }
                         ));
-        logger.debug("Hashcodes with existing matching hashcode and mapping key: {}", fullMatch.get());
-        logger.debug("Hashcodes with existing matching hashcode but mismatched mapping key: {}", partialMatch.get());
-        logger.debug("New hashcodes: {}", newThirdPartyTextUnit.get());
+        Instant end = Instant.now();
+        logger.info("Hashcodes with existing matching hashcode and mapping key: {}", fullMatch.get());
+        logger.info("Hashcodes with existing matching hashcode but mismatched mapping key: {}", partialMatch.get());
+        logger.info("New hashcodes: {}", newThirdPartyTextUnit.get());
+        logger.info("Start: {}", start);
+        logger.info("End: {}", end);
 
     }
 
