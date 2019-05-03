@@ -88,9 +88,11 @@ public class ThirdPartyTextUnitMatchingService {
                                     ThirdPartyTextUnit existingThirdPartyTextUnitFullMatch = thirdPartyTextUnitRepository.findByThirdPartyTextUnitIdAndMappingKey(
                                             hashcode,
                                             mappingKey);
+                                    logger.info("existing full match: {}", existingThirdPartyTextUnitFullMatch != null);
 
                                     ThirdPartyTextUnit existingThirdPartyTextUnitPartialMatch = thirdPartyTextUnitRepository.findByThirdPartyTextUnitId(
                                             hashcode);
+                                    logger.info("existing partial match: {}", existingThirdPartyTextUnitPartialMatch != null);
 
                                     if (existingThirdPartyTextUnitFullMatch != null) {
                                         fullMatch.getAndIncrement();
@@ -103,7 +105,9 @@ public class ThirdPartyTextUnitMatchingService {
                                             newThirdPartyTextUnit.getAndIncrement();
                                         }
                                         TMTextUnit matchingMojitoTextUnit = tmTextUnitRepository.findFirstByContentAndAssetId(mappingKey, assetId);
-                                        logger.info("matching mojito text unit: {}", matchingMojitoTextUnit.getContent());
+                                        if (matchingMojitoTextUnit != null) {
+                                            logger.info("matching mojito text unit: {}", matchingMojitoTextUnit.getContent());
+                                        }
                                         thirdPartyTextUnit.setTmTextUnit(matchingMojitoTextUnit);
                                         thirdPartyTextUnitRepository.save(thirdPartyTextUnit);
                                     }

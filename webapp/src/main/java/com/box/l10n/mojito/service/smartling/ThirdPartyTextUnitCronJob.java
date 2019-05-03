@@ -43,7 +43,7 @@ public class ThirdPartyTextUnitCronJob implements Job {
         logger.info("Starting thirdPartyTextUnitCronJob execution");
         Integer assetId = 1;
         try {
-            thirdPartyTextUnitMatchingService.getThirdPartyTextUnits("128217e07", "demo.properties", assetId.longValue());
+            thirdPartyTextUnitMatchingService.getThirdPartyTextUnits("1234", "demo.properties", assetId.longValue());
         } catch (SmartlingClientException e) {
             logger.info("Exception pulling third party source strings");
         }
