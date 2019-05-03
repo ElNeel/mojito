@@ -15,7 +15,7 @@ public class ThirdPartyTextUnit extends AuditableEntity {
     @Column(name = "third_party_text_unit_id")
     private String thirdPartyTextUnitId;
 
-    @Column(name = "mapping_key", length = 32)
+    @Column(name = "mapping_key", length = Integer.MAX_VALUE)
     private String mappingKey;
 
     @OneToOne

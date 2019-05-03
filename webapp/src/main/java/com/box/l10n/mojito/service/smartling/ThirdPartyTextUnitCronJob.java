@@ -1,6 +1,5 @@
 package com.box.l10n.mojito.service.smartling;
 
-import com.box.l10n.mojito.slack.SlackClientException;
 import com.box.l10n.mojito.smartling.SmartlingClientException;
 import org.quartz.*;
 import org.slf4j.Logger;
@@ -21,7 +20,7 @@ import org.springframework.stereotype.Component;
  * @author cegbukichi
  */
 @Profile("!disablescheduling")
-@ConditionalOnProperty(value="l10n.thirdPartyTextUnit.type")
+@ConditionalOnProperty(value = "l10n.thirdPartyTextUnit.type")
 @Configuration
 @Component
 @DisallowConcurrentExecution
@@ -51,16 +50,16 @@ public class ThirdPartyTextUnitCronJob implements Job {
 
     @Bean(name = "thirdPartyTextUnitCron")
     public JobDetailFactoryBean jobDetailThirdPartyTextUnitCronJob() {
-       JobDetailFactoryBean jobDetailFactoryBean = new JobDetailFactoryBean();
-       jobDetailFactoryBean.setJobClass(ThirdPartyTextUnitCronJob.class);
-       jobDetailFactoryBean.setDescription("Check for third party text units and match with mojito text units");
-       jobDetailFactoryBean.setDurability(true);
-       return jobDetailFactoryBean;
+        JobDetailFactoryBean jobDetailFactoryBean = new JobDetailFactoryBean();
+        jobDetailFactoryBean.setJobClass(ThirdPartyTextUnitCronJob.class);
+        jobDetailFactoryBean.setDescription("Check for third party text units and match with mojito text units");
+        jobDetailFactoryBean.setDurability(true);
+        return jobDetailFactoryBean;
     }
 
     @Bean
     public CronTriggerFactoryBean triggerThirdPartyTextUnitCronJob(@Qualifier("thirdPartyTextUnitCron") JobDetail job) {
-        logger.info("Triggering thirdPartyTextUnitCronJob");
+        logger.debug("Triggering thirdPartyTextUnitCronJob");
         CronTriggerFactoryBean trigger = new CronTriggerFactoryBean();
         trigger.setJobDetail(job);
         trigger.setCronExpression(thirdPartyTextUnitCron);
