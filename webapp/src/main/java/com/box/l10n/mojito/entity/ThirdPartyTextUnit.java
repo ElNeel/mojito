@@ -18,7 +18,7 @@ public class ThirdPartyTextUnit extends AuditableEntity {
     @Column(name = "mapping_key", length = Integer.MAX_VALUE)
     private String mappingKey;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "tm_text_unit_id", foreignKey = @ForeignKey(name = "FK__THIRD_PARTY_TEXT_UNIT__TM_TEXT_UNIT__ID"))
     private TMTextUnit tmTextUnit;
 

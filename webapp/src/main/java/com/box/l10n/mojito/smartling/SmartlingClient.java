@@ -5,6 +5,7 @@ import com.box.l10n.mojito.smartling.response.SourceStringsResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriTemplate;
 
@@ -95,7 +96,7 @@ public class SmartlingClient {
         } else if (!authenticationResponse.isSuccessResponse()) {
             throw new SmartlingClientException(authenticationResponse.getErrorMessage());
         } else {
-            logger.debug("Successful authentication.");
+            logger.info("Successful authentication.");
             Instant now = Instant.now();
             nextAuthentication = now.plus(Duration.ofHours(authenticationDurationHours));
             nextRefresh = now.plus(Duration.ofMinutes(refreshDurationMinutes));
@@ -126,7 +127,7 @@ public class SmartlingClient {
                 nextRefresh = now;
                 throw new SmartlingClientException(authenticationResponse.getErrorMessage());
             } else {
-                logger.debug("Successful refresh of authentication.");
+                logger.info("Successful refresh of authentication.");
                 nextRefresh = nextCalculatedRefresh;
                 refreshToken = authenticationResponse.getResponse().getData().getRefreshToken();
             }
@@ -144,14 +145,24 @@ public class SmartlingClient {
         pathVariables.put("fileUri", file);
         pathVariables.put("offset", offset.toString());
         UriTemplate template = new UriTemplate(API_PULL_SOURCE_STRINGS);
-        ResponseEntity<SourceStringsResponse> exchange = restTemplate.exchange(
-                template.toString(), HttpMethod.GET, httpEntity, SourceStringsResponse.class, pathVariables);
-        SourceStringsResponse sourceStringsResponse = exchange.getBody();
-        if (sourceStringsResponse != null && sourceStringsResponse.isAuthenticationErrorResponse()) {
-            logger.debug("Authentication error occurred when attempting to pull the source strings.");
-            authenticate();
-        } else if (sourceStringsResponse != null && !sourceStringsResponse.isSuccessResponse()) {
-            throw new SmartlingClientException(sourceStringsResponse.getErrorMessage());
+        SourceStringsResponse sourceStringsResponse = new SourceStringsResponse();
+        ResponseEntity<SourceStringsResponse> exchange = null;
+        try {
+            exchange = restTemplate.exchange(
+                    template.toString(), HttpMethod.GET, httpEntity, SourceStringsResponse.class, pathVariables);
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().equals(HttpStatus.UNAUTHORIZED)) {
+                logger.info("Unauthorized error occurred when attempting to pull the source strings.");
+                authenticate();
+            } else {
+                throw e;
+            }
+        }
+        if (exchange != null) {
+            sourceStringsResponse = exchange.getBody();
+            if (sourceStringsResponse != null && !sourceStringsResponse.isSuccessResponse()) {
+                throw new SmartlingClientException(sourceStringsResponse.getErrorMessage());
+            }
         }
         return sourceStringsResponse;
     }

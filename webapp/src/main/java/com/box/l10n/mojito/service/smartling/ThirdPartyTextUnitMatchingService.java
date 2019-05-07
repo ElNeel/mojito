@@ -6,6 +6,7 @@ import com.box.l10n.mojito.service.tm.TMTextUnitRepository;
 import com.box.l10n.mojito.smartling.SmartlingClient;
 import com.box.l10n.mojito.smartling.SmartlingClientException;
 import com.box.l10n.mojito.smartling.request.StringData;
+import com.box.l10n.mojito.smartling.request.StringInfo;
 import com.box.l10n.mojito.smartling.response.SourceStringsResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class ThirdPartyTextUnitMatchingService {
     TMTextUnitRepository tmTextUnitRepository;
 
     void getThirdPartyTextUnits(String projectId, String file, Long assetId) throws SmartlingClientException {
-        logger.debug("Checking for third party text units in file {} of project {}", file, projectId);
+        logger.info("Checking for third party text units in file {} of project {}", file, projectId);
         Integer offset = 0;
         List<StringData> stringDataToCheck = new ArrayList<>();
         try {
@@ -79,7 +80,11 @@ public class ThirdPartyTextUnitMatchingService {
                         stringData.getItems().forEach(
                                 stringInfo -> {
                                     String hashcode = stringInfo.getHashcode();
-                                    String mappingKey = stringInfo.getParsedStringText();
+                                    String mappingKey = stringInfo.getStringVariant();
+                                    String [] mappingKeySplit = mappingKey.split("#@#");
+                                    String assetPath = mappingKeySplit[1];
+                                    String name = mappingKeySplit[0];
+
                                     ThirdPartyTextUnit thirdPartyTextUnit = new ThirdPartyTextUnit();
                                     thirdPartyTextUnit.setThirdPartyTextUnitId(hashcode);
                                     thirdPartyTextUnit.setMappingKey(mappingKey);
@@ -100,8 +105,8 @@ public class ThirdPartyTextUnitMatchingService {
                                         } else {
                                             newThirdPartyTextUnit.getAndIncrement();
                                         }
-                                        TMTextUnit matchingMojitoTextUnit = tmTextUnitRepository.findFirstByContentAndAssetId(mappingKey, assetId);
-                                        if (matchingMojitoTextUnit.equals(null)) {
+                                        TMTextUnit matchingMojitoTextUnit = tmTextUnitRepository.findFirstByNameAndAndAssetPath(name, assetPath);
+                                        if (matchingMojitoTextUnit != null) {
                                             newTPTWithoutMatchingMojitoTU.incrementAndGet();
                                         }
                                         thirdPartyTextUnit.setTmTextUnit(matchingMojitoTextUnit);
@@ -110,12 +115,12 @@ public class ThirdPartyTextUnitMatchingService {
                                 }
                         ));
         Instant end = Instant.now();
-        logger.debug("Hashcodes with existing matching hashcode and mapping key for file {}: {}", file, fullMatch.get());
-        logger.debug("Hashcodes with existing matching hashcode but mismatched mapping key for file {}: {}", file, partialMatch.get());
-        logger.debug("Hashcodes that are not yet in the database for file {}: {}", file, newThirdPartyTextUnit.get());
-        logger.debug("New hashcodes that do not have a matching mojito text unit for file {}: {}", file, newTPTWithoutMatchingMojitoTU);
-        logger.debug("hashcode matching start for file {}: {}", file, start);
-        logger.debug("hashcode matching end for file {}: {}", file, end);
+        logger.info("Hashcodes with existing matching hashcode and mapping key for file {}: {}", file, fullMatch.get());
+        logger.info("Hashcodes with existing matching hashcode but mismatched mapping key for file {}: {}", file, partialMatch.get());
+        logger.info("Hashcodes that are not yet in the database for file {}: {}", file, newThirdPartyTextUnit.get());
+        logger.info("New hashcodes that do not have a matching mojito text unit for file {}: {}", file, newTPTWithoutMatchingMojitoTU);
+        logger.info("hashcode matching start for file {}: {}", file, start);
+        logger.info("hashcode matching end for file {}: {}", file, end);
 
     }
 

@@ -16,6 +16,10 @@ import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
 import org.springframework.scheduling.quartz.JobDetailFactoryBean;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author cegbukichi
  */
@@ -41,11 +45,14 @@ public class ThirdPartyTextUnitCronJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.info("Starting thirdPartyTextUnitCronJob execution");
         Integer assetId = 1;
-        try {
-            thirdPartyTextUnitMatchingService.getThirdPartyTextUnits("1234", "demo.properties", assetId.longValue());
-        } catch (SmartlingClientException e) {
-            logger.info("Exception pulling third party source strings");
-        }
+        List<String> filesList = Arrays.asList("00000_singular_source.xml", "00000_plural_source.xml");
+        filesList.forEach(file -> {
+            try {
+                thirdPartyTextUnitMatchingService.getThirdPartyTextUnits("1234", file, assetId.longValue());
+            } catch (SmartlingClientException e) {
+                logger.info("Exception pulling third party source strings");
+            }
+        });
     }
 
     @Bean(name = "thirdPartyTextUnitCron")
